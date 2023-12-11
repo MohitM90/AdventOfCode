@@ -5,10 +5,10 @@ namespace AdventOfCode;
 
 internal class Program
 {
-    static void Main(string[] args)
+    static async Task Main(string[] args)
     {
         var input = File.ReadAllText("input.txt");
-        Console.WriteLine(Day10.PuzzleB(input));
+        Console.WriteLine(await Day11.PuzzleB(input));
     }
 
 
