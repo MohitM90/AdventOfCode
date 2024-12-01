@@ -1,19 +1,24 @@
-﻿using System.Diagnostics;
+﻿namespace AdventOfCode2024;
 
-namespace AdventOfCode;
-internal class Template
+internal class Template : BaseDay
 {
-    internal static int PuzzleA(string input)
+    public override int Puzzle1()
     {
-        int sum = 0;
-        var inputs = input.Split("\r\n");
-        Stopwatch sw = Stopwatch.StartNew();
-        foreach (var s in inputs)
-        {
+        int answer = 0;
+        var inputs = Input.Split("\r\n");
 
-        }
 
-        Console.WriteLine(sw.ToString());
-        return sum;
+
+        return answer;
+    }
+
+    public override int Puzzle2()
+    {
+        int answer = 0;
+        var inputs = Input.Split("\r\n");
+
+
+
+        return answer;
     }
 }
