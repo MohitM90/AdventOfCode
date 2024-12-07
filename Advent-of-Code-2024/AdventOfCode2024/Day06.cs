@@ -9,29 +9,54 @@ namespace AdventOfCode2024;
 
 internal class Day06 : BaseDay
 {
-    public override int Puzzle1()
+    public override async Task<int> Puzzle1Async()
+    {
+        int answer = 0;
+        var map = Input.Split("\r\n").Select(s => s.ToCharArray());
+        var traversedMap = MoveGuard(map.ToArray());
+
+        foreach (var c in traversedMap)
+        {
+            if (c == 'X')
+            {
+                answer++;
+            }
+        }
+
+        await Task.CompletedTask;
+        return answer;
+    }
+
+    public override async Task<int> Puzzle2Async()
     {
         int answer = 0;
         var map = Input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
         var traversedMap = MoveGuard(map);
+        var startingPosos = FindStartPosition(map);
 
-        answer = traversedMap.Sum(row => row.Count(c => c == 'X'));
+        var tasks = new List<Task<bool>>();
+
+        Enumerable.Range(0, traversedMap.GetLength(0)).ToList().ForEach(i =>
+        {
+            Enumerable.Range(0, traversedMap.GetLength(1)).ToList().ForEach(j =>
+            {
+                if (traversedMap[i, j] == 'X')
+                {
+                    tasks.Add(Task.Run(() => BecomesLoopWithObstacle(map, startingPosos, new Position(i, j))));
+                }
+            });
+        });
+
+        var results = await Task.WhenAll(tasks);
+        answer = results.Count(r => r);
 
         return answer;
     }
 
-    public override int Puzzle2()
+    private char[,] MoveGuard(char[][] map)
     {
-        int answer = 0;
-        
+        char[,] visited = new char[map.Length, map[0].Length];
 
-
-
-        return answer;
-    }
-
-    private char[][] MoveGuard(char[][] map)
-    {
         var pos = FindStartPosition(map);
         var directionChar = map[pos.Y][pos.X];
         var direction = GetMoveDirection(directionChar);
@@ -42,22 +67,65 @@ internal class Day06 : BaseDay
             if (map[nextPos.Y][nextPos.X] == '#')
             {
                 directionChar = TurnRight(directionChar);
-                map[pos.Y][pos.X] = directionChar;
+                visited[pos.X, pos.Y] = directionChar;
                 direction = GetMoveDirection(directionChar);
-            } 
+            }
             else
             {
-                map[nextPos.Y][nextPos.X] = directionChar;
-                map[pos.Y][pos.X] = 'X';
+                visited[nextPos.X, nextPos.Y] = directionChar;
+                visited[pos.X, pos.Y] = 'X';
                 pos = nextPos;
             }
-            
+
             nextPos = new Position(pos.X + direction.X, pos.Y + direction.Y);
         }
 
-        map[pos.Y][pos.X] = 'X';
-        return map;
+        visited[pos.X, pos.Y] = 'X';
+        return visited;
     }
+
+    private bool BecomesLoopWithObstacle(char[][] map, Position startingPos, Position obstacle)
+    {
+        var pos = startingPos;
+        if (obstacle == pos)
+        {
+            return false;
+        }
+
+        Direction[,] visited = new Direction[map.Length, map[0].Length];
+
+        var directionChar = map[pos.Y][pos.X];
+        var directionEnum = GetDirection(directionChar);
+        var direction = GetMoveDirection(directionChar);
+
+        var nextPos = new Position(pos.X + direction.X, pos.Y + direction.Y);
+        while (nextPos.X >= 0 && nextPos.X < map[0].Length && nextPos.Y >= 0 && nextPos.Y < map.Length)
+        {
+            if (visited[nextPos.X, nextPos.Y].HasFlag(directionEnum))
+            {
+                return true;
+            }
+
+            if (map[nextPos.Y][nextPos.X] == '#' || nextPos == obstacle)
+            {
+                directionChar = TurnRight(directionChar);
+                directionEnum = GetDirection(directionChar);
+                visited[pos.X, pos.Y] = visited[pos.X, pos.Y] | directionEnum;
+                direction = GetMoveDirection(directionChar);
+            }
+            else
+            {
+                visited[nextPos.X, nextPos.Y] = visited[nextPos.X, nextPos.Y] | directionEnum;
+                pos = nextPos;
+            }
+
+            nextPos = new Position(pos.X + direction.X, pos.Y + direction.Y);
+
+        }
+
+        return false;
+    }
+
 
     private Position FindStartPosition(char[][] map)
     {
@@ -82,6 +150,18 @@ internal class Day06 : BaseDay
         };
     }
 
+    private Direction GetDirection(char pos)
+    {
+        return pos switch
+        {
+            '^' => Direction.UP,
+            'v' => Direction.DOWN,
+            '<' => Direction.LEFT,
+            '>' => Direction.RIGHT,
+            _ => throw new Exception("Invalid direction")
+        };
+    }
+
     private char TurnRight(char pos)
     {
         return pos switch
@@ -101,4 +181,12 @@ internal class Day06 : BaseDay
     private static readonly Position LEFT = new(-1, 0);
     private static readonly Position RIGHT = new(1, 0);
 
+    [Flags]
+    private enum Direction
+    {
+        UP = 1,
+        DOWN = 2,
+        LEFT = 4,
+        RIGHT = 8
+    }
 }
