@@ -2,7 +2,7 @@
 
 internal class Template : BaseDay
 {
-    public override int Puzzle1()
+    public override long Puzzle1()
     {
         int answer = 0;
         var inputs = Input.Split("\r\n");
@@ -12,7 +12,7 @@ internal class Template : BaseDay
         return answer;
     }
 
-    public override int Puzzle2()
+    public override long Puzzle2()
     {
         int answer = 0;
         var inputs = Input.Split("\r\n");

@@ -6,11 +6,11 @@ internal abstract class BaseDay
 {
     public string Input { get; set; } = File.ReadAllText("input.txt");
 
-    public virtual int Puzzle1() { throw new NotImplementedException(); }
-    public virtual int Puzzle2() { throw new NotImplementedException(); }
+    public virtual long Puzzle1() { throw new NotImplementedException(); }
+    public virtual long Puzzle2() { throw new NotImplementedException(); }
 
-    public virtual async Task<int> Puzzle1Async() { throw new NotImplementedException(); }
-    public virtual async Task<int> Puzzle2Async() { throw new NotImplementedException(); }
+    public virtual async Task<long> Puzzle1Async() { throw new NotImplementedException(); }
+    public virtual async Task<long> Puzzle2Async() { throw new NotImplementedException(); }
 
     public void Run()
     {

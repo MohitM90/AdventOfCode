@@ -9,7 +9,7 @@ namespace AdventOfCode2024;
 
 internal class Day05 : BaseDay
 {
-    public override int Puzzle1()
+    public override long Puzzle1()
     {
         int answer = 0;
         var inputs = Input.Split("\r\n\r\n");
@@ -33,7 +33,7 @@ internal class Day05 : BaseDay
         return answer;
     }
 
-    public override int Puzzle2()
+    public override long Puzzle2()
     {
         int answer = 0;
         var inputs = Input.Split("\r\n\r\n");

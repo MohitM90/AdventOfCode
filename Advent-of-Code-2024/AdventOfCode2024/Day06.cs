@@ -9,7 +9,7 @@ namespace AdventOfCode2024;
 
 internal class Day06 : BaseDay
 {
-    public override async Task<int> Puzzle1Async()
+    public override async Task<long> Puzzle1Async()
     {
         int answer = 0;
         var map = Input.Split("\r\n").Select(s => s.ToCharArray());
@@ -27,7 +27,7 @@ internal class Day06 : BaseDay
         return answer;
     }
 
-    public override async Task<int> Puzzle2Async()
+    public override async Task<long> Puzzle2Async()
     {
         int answer = 0;
         var map = Input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
