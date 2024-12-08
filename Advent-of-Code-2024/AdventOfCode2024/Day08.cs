@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -20,7 +21,10 @@ internal partial class Day08 : BaseDay
             MarkAntinodes(inputs, antenna.Key, [.. antenna], antinodeMap);
         }
 
-        answer = antinodeMap.Cast<char>().Count(c => c == '#');
+        foreach (var c in antinodeMap)
+        {
+            answer++;
+        }
 
         return answer;
     }
@@ -29,7 +33,17 @@ internal partial class Day08 : BaseDay
     {
         long answer = 0;
         var inputs = Input.Split("\r\n");
-        
+        ILookup<char, Point> antennas = GetAntennaPositions(inputs);
+        char[,] antinodeMap = new char[inputs[0].Length, inputs.Length];
+        foreach (var antenna in antennas)
+        {
+            MarkAntinodes(inputs, antenna.Key, [.. antenna], antinodeMap, true);
+        }
+
+        foreach (var c in antinodeMap)
+        {
+            answer++;
+        }
 
         return answer;
     }
@@ -42,7 +56,7 @@ internal partial class Day08 : BaseDay
             .ToLookup(x => x.Antenna, x => x.Position);
     }
 
-    private static void MarkAntinodes(string[] map, char antenna, IList<Point> points, char[,] antinodeMap)
+    private static void MarkAntinodes(string[] map, char antenna, IList<Point> points, char[,] antinodeMap, bool withResonancy = false)
     {
         for (int i = 0; i < points.Count; i++)
         {
@@ -52,6 +66,24 @@ internal partial class Day08 : BaseDay
                 var p2 = points[j];
                 var dx = p2.X - p1.X;
                 var dy = p2.Y - p1.Y;
+
+                if (withResonancy)
+                {
+                    for (int x = p1.X, y = p1.Y;
+                     x >= 0 && x < map[0].Length && y >= 0 && y < map.Length;
+                     x += dx, y += dy)
+                    {
+                        antinodeMap[x, y] = '#';
+                    }
+
+                    for (int x = p1.X, y = p1.Y;
+                         x >= 0 && x < map[0].Length && y >= 0 && y < map.Length;
+                         x -= dx, y -= dy)
+                    {
+                        antinodeMap[x, y] = '#';
+                    }
+                    continue;
+                }
 
                 var node1 = Point.MinY(p1, p2);
                 var node2 = Point.MaxY(p1, p2);
