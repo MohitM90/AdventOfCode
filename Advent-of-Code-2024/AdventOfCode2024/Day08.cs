@@ -23,7 +23,10 @@ internal partial class Day08 : BaseDay
 
         foreach (var c in antinodeMap)
         {
-            answer++;
+            if (c == '#')
+            {
+                answer++;
+            }
         }
 
         return answer;
@@ -42,7 +45,10 @@ internal partial class Day08 : BaseDay
 
         foreach (var c in antinodeMap)
         {
-            answer++;
+            if (c == '#')
+            {
+                answer++;
+            }
         }
 
         return answer;
