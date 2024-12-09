@@ -4,7 +4,7 @@ internal class Template : BaseDay
 {
     public override long Puzzle1()
     {
-        int answer = 0;
+        long answer = 0;
         var inputs = Input.Split("\r\n");
 
 
@@ -14,7 +14,7 @@ internal class Template : BaseDay
 
     public override long Puzzle2()
     {
-        int answer = 0;
+        long answer = 0;
         var inputs = Input.Split("\r\n");
 
 
