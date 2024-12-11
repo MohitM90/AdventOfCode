@@ -21,14 +21,14 @@ internal class Day10 : BaseDay
     public override long Puzzle2()
     {
         long answer = 0;
-        var inputs = Input.Split("\r\n");
+        var inputs = Input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
 
-
+        answer = CalculateScore(inputs, false);
 
         return answer;
     }
 
-    private long CalculateScore(char[][] inputs)
+    private long CalculateScore(char[][] inputs, bool distinctRoutes = true)
     {
         var trailHeads = inputs.SelectMany((row, y) => row.Select((c, x) => (c, new Point(x, y))))
             .Where(t => t.c == '0');
@@ -46,7 +46,7 @@ internal class Day10 : BaseDay
 
                 if (point.c == '9')
                 {
-                    if (!trailEnds.Contains(point.p))
+                    if (!distinctRoutes || !trailEnds.Contains(point.p))
                     {
                         trailEnds.Add(point.p);
                     }
