@@ -10,57 +10,51 @@ internal class Day11 : BaseDay
 {
     public override long Puzzle1()
     {
-        var inputs = Input.Split(separator: " ");
+        var inputs = Input.Split(" ").Select(x => ulong.Parse(x));
 
         for (int i = 0; i < 25; i++)
         {
-            inputs = inputs.SelectMany(i => ApplyRules(i)).ToArray();
-            //Console.WriteLine(string.Join(" ", inputs));
-            //Console.WriteLine();
+            inputs = inputs.SelectMany(i => ApplyRules(i));
+            Console.WriteLine(string.Join(" ", inputs));
+            Console.WriteLine();
         }
-        return inputs.LongLength;
+        return inputs.Count();
     }
 
     public override long Puzzle2()
     {
-        long answer = 0;
-        var inputs = Input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
-
-        
-
-        return answer;
+        return 0;
     }
 
-    private string[] ApplyRules(string input)
+    private ulong[] ApplyRules(ulong input)
     {
-        if (input == "0")
+        if (input == 0)
         {
-            return ["1"];
+            return [1];
         }
 
         if (HasEvenDigits(input)) {
             return SplitHalf(input);
         }
 
-        return MultiplyBy2024(input);
+        return [input * 2024];
     }
 
-    private bool HasEvenDigits(string input)
+    private bool HasEvenDigits(ulong input)
     {
-        return input.Length %2 == 0;
+        var digits = (int)(Math.Log10(input) + 1);
+        return digits % 2 == 0;
     }
 
-    private string[] SplitHalf(string input)
+    private ulong[] SplitHalf(ulong input)
     {
-        var firstHalf = ulong.Parse(input[0..(input.Length / 2)]).ToString();
-        var secondHalf = ulong.Parse(input[(input.Length / 2)..]).ToString();
+        var digits = (int)(Math.Log10(input) + 1);
+
+        ulong factor = (ulong)Math.Pow(10, digits / 2);
+        var firstHalf = input / factor;
+        var secondHalf = input - firstHalf * factor;
+
         return [firstHalf, secondHalf];
     }
 
-    private string[] MultiplyBy2024(string input)
-    {
-        return [(ulong.Parse(input) * 2024).ToString()];
-    }
-
-    private record Point(int X, int Y);
 }
