@@ -21,7 +21,6 @@ internal class Day11 : BaseDay
             inputs = inputs
                 .GroupBy(x => x)
                 .SelectMany(i => ApplyRules((i.Key.Item1, i.Sum(x => x.Item2))));
-
         }
 
         answer = inputs.Sum(x => x.Item2);
@@ -82,5 +81,4 @@ internal class Day11 : BaseDay
 
         return (firstHalf, secondHalf);
     }
-
 }
