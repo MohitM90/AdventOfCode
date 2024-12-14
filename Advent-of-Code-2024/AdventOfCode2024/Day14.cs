@@ -153,11 +153,11 @@ internal class Day14 : BaseDay
                 var sum = robots.Where(r => r.Position.X == x && r.Position.Y == y).Count();
                 if (sum > 0)
                 {
-                    output += sum;
+                    output += "🤖";
                 }
                 else
                 {
-                    output += ".";
+                    output += "⚫";
                 }
             }
             output += "\n";
