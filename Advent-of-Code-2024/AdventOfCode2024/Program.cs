@@ -1,5 +1,5 @@
 ﻿using AdventOfCode2024;
 
 
-new Day14().Run();
+new Day13().Run();
 Console.ReadKey();
