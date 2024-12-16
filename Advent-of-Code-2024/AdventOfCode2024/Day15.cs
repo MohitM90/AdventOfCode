@@ -30,13 +30,27 @@ internal class Day15 : BaseDay
     public override long Puzzle2()
     {
         long answer = 0;
-        var inputs = Input.Split("\r\n");
+        var inputs = Input.Split("\r\n\r\n");
+        var map = inputs[0].Split("\r\n")
+            .Select(s => s
+                .Replace("#", "##")
+                .Replace("O", "[]")
+                .Replace(".", "..")
+                .Replace("@", "@.")
+                .ToCharArray());
 
+        var moves = inputs[1].Replace("\r\n", "");
+
+        var newMap = MoveGuard(map.ToArray(), moves, false);
+
+        answer = newMap.SelectMany((row, y) => row.Select((c, x) => (c, position: new Position(x, y)))
+            .Where(t => t.c == '['))
+            .Sum(t => t.position.X + 100 * t.position.Y);
 
         return answer;
     }
 
-    private char[][] MoveGuard(char[][] map, string moves)
+    private char[][] MoveGuard(char[][] map, string moves, bool printMap = false)
     {
         var pos = FindStartPosition(map);
 
@@ -48,14 +62,20 @@ internal class Day15 : BaseDay
             if (map[nextPos.Y][nextPos.X] == 'O')
             {
                 MoveBox(map, nextPos, direction);
-                //PrinMap(map);
+            }
+            if (map[nextPos.Y][nextPos.X] == '[' || map[nextPos.Y][nextPos.X] == ']')
+            {
+                MoveLargeBox(map, nextPos, direction);
             }
             if (map[nextPos.Y][nextPos.X] == '.')
             {
                 map[pos.Y][pos.X] = '.';
                 map[nextPos.Y][nextPos.X] = '@';
                 pos = nextPos;
-                //PrinMap(map);
+            }
+            if (printMap)
+            {
+                PrinMap(map, 500);
             }
         }
 
@@ -77,13 +97,100 @@ internal class Day15 : BaseDay
         {
             map[boxPosition.Y][boxPosition.X] = '.';
             map[nextPos.Y][nextPos.X] = 'O';
-            //PrinMap(map);
         }
     }
 
-    private void PrinMap(char[][] map)
+    private bool MoveLargeBox(char[][] map, Position boxPosition, Position moveDirection)
     {
-        Console.Clear();
+        var box = boxPosition;
+        bool moved = false;
+        if (moveDirection == UP || moveDirection == DOWN)
+        {
+            if (CanMoveLargeBox(map, box, moveDirection))
+            {
+                if (map[box.Y][box.X] == ']')
+                {
+                    box = new Position(box.X - 1, box.Y);
+                }
+                var nextPos = new Position(box.X + moveDirection.X, box.Y + moveDirection.Y);
+                if (map[nextPos.Y][nextPos.X] == '[' || map[nextPos.Y][nextPos.X] == ']')
+                {
+                    MoveLargeBox(map, nextPos, moveDirection);
+                }
+                if (map[nextPos.Y][nextPos.X + 1] == '[')
+                {
+                    nextPos = new Position(box.X + moveDirection.X + 1, box.Y + moveDirection.Y);
+                    MoveLargeBox(map, nextPos, moveDirection);
+                    nextPos = new Position(box.X + moveDirection.X, box.Y + moveDirection.Y);
+                }
+                map[box.Y][box.X] = '.';
+                map[box.Y][box.X + 1] = '.';
+                map[nextPos.Y][nextPos.X] = '[';
+                map[nextPos.Y][nextPos.X + 1] = ']';
+                moved = true;
+            }
+        }
+        if (moveDirection == LEFT || moveDirection == RIGHT)
+        {
+            if (CanMoveLargeBox(map, box, moveDirection))
+            {
+                var nextPos = new Position(box.X + 2 * moveDirection.X, box.Y + moveDirection.Y);
+                if (map[nextPos.Y][nextPos.X] == '[' || map[nextPos.Y][nextPos.X] == ']')
+                {
+                    MoveLargeBox(map, nextPos, moveDirection);
+                }
+                map[nextPos.Y][nextPos.X] = map[nextPos.Y][nextPos.X - moveDirection.X];
+                map[nextPos.Y][nextPos.X - moveDirection.X] = map[box.Y][box.X];
+                map[box.Y][box.X] = '.';
+                moved = true;
+            }
+        }
+        return moved;
+    }
+
+    private bool CanMoveLargeBox(char[][] map, Position boxPosition, Position moveDirection)
+    {
+        var box = boxPosition;
+        bool canMove = true;
+        if (moveDirection == UP || moveDirection == DOWN)
+        {
+            if (map[box.Y][box.X] == ']')
+            {
+                box = new Position(box.X - 1, box.Y);
+            }
+            var nextPos = new Position(box.X + moveDirection.X, box.Y + moveDirection.Y);
+            if (map[nextPos.Y][nextPos.X] == '#' || map[nextPos.Y][nextPos.X + 1] == '#')
+            {
+                return false;
+            }
+            if (map[nextPos.Y][nextPos.X] == '[' || map[nextPos.Y][nextPos.X] == ']')
+            {
+                canMove &= CanMoveLargeBox(map, nextPos, moveDirection);
+            }
+            if (map[nextPos.Y][nextPos.X + 1] == '[')
+            {
+                nextPos = new Position(box.X + moveDirection.X + 1, box.Y + moveDirection.Y);
+                canMove &= CanMoveLargeBox(map, nextPos, moveDirection);
+            }
+        }
+        if (moveDirection == LEFT || moveDirection == RIGHT)
+        {
+            var nextPos = new Position(box.X + 2 * moveDirection.X, box.Y + moveDirection.Y);
+            if (map[nextPos.Y][nextPos.X] == '#')
+            {
+                return false;
+            }
+            if (map[nextPos.Y][nextPos.X] == '[' || map[nextPos.Y][nextPos.X] == ']')
+            {
+                canMove &= CanMoveLargeBox(map, nextPos, moveDirection);
+            }
+        }
+        return canMove;
+    }
+
+    private void PrinMap(char[][] map, int delay)
+    {
+        Console.SetCursorPosition(0, 0);
         string output = "";
         for (int y = 0; y < map.Length; y++)
         {
@@ -94,7 +201,7 @@ internal class Day15 : BaseDay
             output += "\n";
         }
         Console.WriteLine(output);
-        //Thread.Sleep(1000);
+        Thread.Sleep(delay);
     }
 
     private Position FindStartPosition(char[][] map)
