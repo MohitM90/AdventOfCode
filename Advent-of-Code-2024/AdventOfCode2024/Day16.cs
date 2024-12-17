@@ -17,7 +17,7 @@ internal class Day16 : BaseDay
         long answer = 0;
         var map = Input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
 
-        Tile t = FindEndTilePathScore(map);
+        Tile t = FindEndTilePathScore(map).First();
 
         answer = t.Distance;
 
@@ -27,12 +27,32 @@ internal class Day16 : BaseDay
     public override long Puzzle2()
     {
         long answer = 0;
-        var map = Input.Split("\r\n").Select(s => s.ToCharArray());
+        var map = Input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
+
+        var tiles = FindEndTilePathScore(map);
+
+        var positions = new List<Position>();
+        foreach (var tile in tiles)
+        {
+            var currentTile = tile;
+            while (currentTile != null)
+            {
+                if (!positions.Contains(currentTile.Position))
+                {
+                    map[currentTile.Position.Y][currentTile.Position.X] = 'O';
+                    positions.Add(currentTile.Position);
+                }
+                currentTile = currentTile.Parent;
+            }
+        }
+        PrinMap(map, 100);
+
+        answer = positions.Count;
 
         return answer;
     }
 
-    private Tile FindEndTilePathScore(char[][] map)
+    private List<Tile> FindEndTilePathScore(char[][] map)
     {
         var startNode = FindStartTile(map);
         var endPosition = FindEndPosition(map);
@@ -42,38 +62,49 @@ internal class Day16 : BaseDay
         List<Tile> openTiles = new();
         openTiles.Add(startNode);
 
-        var result = new Tile(new Position(-1, -1), long.MaxValue, ' ', null);
+        var result = new List<Tile>();
+        long resultDistance = 85397;
         while (openTiles.Count > 0)
         {
             var currentTile = openTiles.MinBy(x => x.GoalDistance)!;
             openTiles.Remove(currentTile);
             if (currentTile.Position == endPosition)
             {
-                if (currentTile.Distance < result.Distance)
+                if (result.Count == 0 || result.Any(x => currentTile.Distance < x.Distance))
                 {
-                    result = currentTile;
+                    result = [currentTile];
+                    resultDistance = currentTile.Distance;
+                }
+                else if (currentTile.Distance == result.First().Distance)
+                {
+                    result.Add(currentTile);
                 }
             }
             closedTiles.Add(currentTile);
-            var children = GetChildren(map, currentTile).Where(x => !closedTiles.Contains(x));
+            var children = GetChildren(map, currentTile).Where(x => !closedTiles.Any(y => x.Position == y.Position && x.Direction == y.Direction));
             foreach (var child in children)
             {
-                var closedChild = closedTiles.FirstOrDefault(c => child.Position == c.Position && child.Direction == c.Direction);
-                if (closedChild != null && child.Distance < closedChild.Distance)
-                {
-                    closedTiles.Remove(closedChild);
-                    closedChild = null;
-                }
-                var openChild = openTiles.FirstOrDefault(c => child.Position == c.Position && child.Direction == c.Direction);
-                if (openChild != null && child.Distance < openChild.Distance)
-                {
-                    openTiles.Remove(openChild);
-                    openChild = null;
-                }
+                //var closedChild = closedTiles.FirstOrDefault(c => child.Position == c.Position && child.Direction == c.Direction);
+                //if (closedChild != null && child.Distance < closedChild.Distance)
+                //{
+                //    closedTiles.Remove(closedChild);
+                //    closedChild = null;
+                //}
+                //var openChild = openTiles.FirstOrDefault(c => child.Position == c.Position && child.Direction == c.Direction);
+                //if (openChild != null && child.Distance < openChild.Distance)
+                //{
+                //    openTiles.Remove(openChild);
+                //    openChild = null;
+                //}
 
-                if (closedChild == null && openChild == null)
+                //if (closedChild == null && openChild == null)
+                //{
+                //    child.GoalDistance = child.Distance + GetHeuristic(child.Position, endPosition);
+                //    openTiles.Add(child);
+                //}
+                child.GoalDistance = child.Distance + GetHeuristic(child.Position, endPosition);
+                if (child.GoalDistance <= resultDistance)
                 {
-                    child.GoalDistance = child.Distance + GetHeuristic(child.Position, endPosition);
                     openTiles.Add(child);
                 }
             }
@@ -122,8 +153,9 @@ internal class Day16 : BaseDay
 
     private long GetHeuristic(Position current, Position end)
     {
-        //return 1;
-        return (Math.Abs(current.X - end.X) + Math.Abs(current.Y - end.Y));
+        return 1;
+        //return long.MaxValue - 100000;
+        //return (Math.Abs(current.X - end.X) + Math.Abs(current.Y - end.Y));
     }
 
     private void PrinMap(char[][] map, int delay)
