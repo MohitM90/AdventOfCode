@@ -2,7 +2,7 @@
 
 namespace AdventOfCode2024;
 
-internal class Day01 : BaseDay
+internal class Day01 : BaseDay<long>
 {
 
     public override long Puzzle1()

@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AdventOfCode2024;
-internal class Day15 : BaseDay
+internal class Day15 : BaseDay<long>
 {
 
     public override long Puzzle1()

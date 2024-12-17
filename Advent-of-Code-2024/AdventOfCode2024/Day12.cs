@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace AdventOfCode2024;
-internal class Day12 : BaseDay
+internal class Day12 : BaseDay<long>
 {
 
     public override long Puzzle1()
