@@ -1,6 +1,6 @@
 ﻿namespace AdventOfCode2024;
 
-internal class Template : BaseDay
+internal class Template : BaseDay<long>
 {
     public override long Puzzle1()
     {
