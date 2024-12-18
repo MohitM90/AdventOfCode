@@ -26,7 +26,7 @@ internal class Day17 : BaseDay<string>
             long.Parse(input.Groups["c"].Value),
             input.Groups["ins"].Value.Split(",").Select(byte.Parse).ToArray());
 
-        answer = app.Run();
+        answer = string.Join(",", app.Run());
 
         return answer;
     }
@@ -34,8 +34,45 @@ internal class Day17 : BaseDay<string>
     public override string Puzzle2()
     {
         string answer = "";
-        var map = Input.Split("\r\n");
+        var input = Regex.Match(Input,
+            "Register A: (?<a>\\d+)\r\n" +
+            "Register B: (?<b>\\d+)\r\n" +
+            "Register C: (?<c>\\d+)\r\n\r\n" +
+            "Program: (?<ins>.+)");
+        var app = new Application(
+            long.Parse(input.Groups["a"].Value),
+            long.Parse(input.Groups["b"].Value),
+            long.Parse(input.Groups["c"].Value),
+            input.Groups["ins"].Value.Split(",").Select(byte.Parse).ToArray());
 
+        var program = app.GetProgram().Select(x => (long)x).ToArray();
+
+        var queue = new Queue<long>();
+        queue.Enqueue(0);
+
+        long[] output = [];
+        while (true)
+        {
+            if (output.Length == program.Length && output.SequenceEqual(program))
+            {
+                answer = $"{queue.Dequeue()}";
+                break;
+            }
+
+            var a = queue.Dequeue();
+            a <<= 3;
+            for (int i = 0; i < 8; i++)
+            {
+                app.RegisterA = a + i;
+                app.RegisterB = 0;
+                app.RegisterC = 0;
+                output = app.Run();
+                if (program.TakeLast(output.Length).SequenceEqual(output))
+                {
+                    queue.Enqueue(a + i);
+                }
+            }
+        }
 
         return answer;
     }
@@ -60,13 +97,20 @@ internal class Day17 : BaseDay<string>
             Instructions = instructions.Chunk(2).Select(i => new Instruction((Opcode)i[0], i[1])).ToArray();
         }
 
-        public string Run()
+        public long[] Run()
         {
+            Output.Clear();
+            InstructionPointer = 0;
             while (InstructionPointer < Instructions.Length)
             {
                 ExecuteInstruction(Instructions[InstructionPointer]);
             }
-            return string.Join(",", Output);
+            return [.. Output];
+        }
+
+        public byte[] GetProgram()
+        {
+            return Instructions.SelectMany(i => new byte[] { (byte)i.Opcode, i.Operand }).ToArray();
         }
 
         private long GetComboOperandValue(byte operand)
