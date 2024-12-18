@@ -79,7 +79,6 @@ internal class Day17 : BaseDay<string>
 
     private record Application
     {
-
         public long RegisterA { get; set; }
         public long RegisterB { get; set; }
         public long RegisterC { get; set; }
@@ -239,9 +238,5 @@ internal class Day17 : BaseDay<string>
             Bdv = 6,
             Cdv = 7
         }
-
-  
     }
-
-    
 }
