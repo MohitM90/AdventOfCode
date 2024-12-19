@@ -15,7 +15,7 @@ internal class Day19 : BaseDay<long>
     public override long Puzzle1()
     {
         long answer = 0;
-        var input = Input.Split("\r\n").Select(x => x.Split(",").Select(y => int.Parse(y)).ToArray());
+        var input = Input.Split("\r\n\r\n");
 
 
         return answer;
@@ -24,7 +24,7 @@ internal class Day19 : BaseDay<long>
     public override long Puzzle2()
     {
         long answer = 0;
-        var input = Input.Split("\r\n").Select(x => x.Split(",").Select(y => int.Parse(y)).ToArray());
+        var input = Input.Split("\r\n\r\n");
 
 
         return answer;
