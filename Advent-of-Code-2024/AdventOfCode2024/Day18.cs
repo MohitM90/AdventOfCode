@@ -9,10 +9,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AdventOfCode2024;
-internal class Day18 : BaseDay<long>
+internal class Day18 : BaseDay<string>
 {
 
-    public override long Puzzle1()
+    public override string Puzzle1()
     {
         long answer = 0;
         var input = Input.Split("\r\n").Select(x => x.Split(",").Select(y => int.Parse(y)).ToArray());
@@ -22,11 +22,11 @@ internal class Day18 : BaseDay<long>
             map[line[0], line[1]] = int.MaxValue;
         }
 
-        
-
         var start = new Tile(new Position(0, 0), 0, null);
         var end = new Position(70, 70);
+
         var endTile = FindEndTilePathScore(map, start, end);
+
         answer = -1;
         while (endTile != null)
         {
@@ -34,14 +34,58 @@ internal class Day18 : BaseDay<long>
             endTile = endTile.Parent;
         }
 
-        return answer;
+        return $"{answer}";
     }
 
-    public override long Puzzle2()
+    public override string Puzzle2()
     {
-        long answer = 0;
-        var map = Input.Split("\r\n");
+        string answer = "";
+        var input = Input.Split("\r\n").Select(x => x.Split(",").Select(y => int.Parse(y)).ToArray())
+            .Select(x => new Position(x[0], x[1]))
+            .ToArray();
+        int[,] map = new int[71, 71];
+        int pos = 1024;
+        foreach (var line in input.Take(pos))
+        {
+            map[line.X, line.Y] = int.MaxValue;
+        }
 
+        var start = new Tile(new Position(0, 0), 0, null);
+        var end = new Position(70, 70);
+
+        var endTile = FindEndTilePathScore(map, start, end);
+
+        while (endTile != null)
+        {
+            map[endTile.Position.X, endTile.Position.Y] = -1;
+            endTile = endTile.Parent;
+        }
+
+        
+        while (pos < input.Length)
+        {
+            var tile = input[pos];
+            if (map[tile.X, tile.Y] == -1)
+            {
+                map[tile.X, tile.Y] = int.MaxValue;
+                endTile = FindEndTilePathScore(map, start, end);
+                if (endTile.Parent == null)
+                {
+                    answer = $"Pos (index): {pos} - {tile.X},{tile.Y}";
+                    break;
+                }
+                while (endTile != null)
+                {
+                    map[endTile.Position.X, endTile.Position.Y] = -1;
+                    endTile = endTile.Parent;
+                }
+            }
+            else
+            {
+                map[tile.X, tile.Y] = int.MaxValue;
+            }
+            pos++;
+        }
 
         return answer;
     }
