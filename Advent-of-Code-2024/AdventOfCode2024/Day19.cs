@@ -17,6 +17,20 @@ internal class Day19 : BaseDay<long>
         long answer = 0;
         var input = Input.Split("\r\n\r\n");
 
+        var rules = input[0].Split(", ").ToList();
+
+        List<string> rulesFiltered = new();
+        foreach (var rule in rules)
+        {
+            var p = "^(?:" + string.Join("|", rules.Except([rule])) + ")+$";
+            if (!Regex.IsMatch(rule, p))
+            {
+                rulesFiltered.Add(rule);
+            }
+        }
+
+        var pattern = "^(?:" + string.Join("|", rulesFiltered) + ")+$";
+        answer = input[1].Split("\r\n").Count(x => Regex.IsMatch(x, pattern));
 
         return answer;
     }
