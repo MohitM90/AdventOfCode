@@ -15,21 +15,22 @@ internal class Day20 : BaseDay<long>
     public override long Puzzle1()
     {
         long answer = 0;
-        var map = Input.Split("\r\n").Select(s => s.ToCharArray());
+        var map = Input.Split("\r\n")
+            .Select((row, y) =>
+                row.Select((column, x) =>
+                    new Tile(column, new(x, y)))
+                .ToArray()
+            );
 
-        var steps = GetStepsMap(map.ToArray());
-        var cheats = FindCheats(map.ToArray());
-        foreach (var cheat in cheats)
-        {
-            var cheatPos = cheat.Position;
-            var cheatSteps = cheat.Steps;
-            var fieldSteps = steps[cheatPos.X, cheatPos.Y];
-            var timeSaved = fieldSteps - cheatSteps;
-            if (timeSaved >= 100)
-            {
-                answer++;
-            }
-        }
+        var initialMap = map.ToArray();
+        var steps = GetStepsMap(initialMap);
+
+        var newMap = map.ToArray();
+        var startPos = FindStartPosition(newMap);
+        var endPos = FindEndPosition(newMap);
+        var cheats = FindCheats(newMap, steps, 2, startPos, endPos);
+
+        answer = cheats.Count;
 
         return answer;
     }
@@ -37,81 +38,143 @@ internal class Day20 : BaseDay<long>
     public override long Puzzle2()
     {
         long answer = 0;
-        var input = Input.Split("\r\n");
+        var map = Input.Split("\r\n")
+            .Select((row, y) => 
+                row.Select((column, x) => 
+                    new Tile(column, new(x, y)))
+                .ToArray()
+            );
 
+        var initialMap = map.ToArray();
+        var steps = GetStepsMap(initialMap);
+
+        var newMap = map.ToArray();
+        var startPos = FindStartPosition(newMap);
+        var endPos = FindEndPosition(newMap);
+        var cheats = FindCheats(newMap, steps, 20, startPos, endPos);
+
+        answer = cheats.Count;
 
         return answer;
     }
 
-    private long[,] GetStepsMap(char[][] map)
+    private long[,] GetStepsMap(Tile[][] map)
     {
         long steps = 0;
         long[,] fieldSteps = new long[map.Length, map[0].Length];
         var pos = FindStartPosition(map);
-        while (map[pos.Y][pos.X] != 'E')
+        while (map[pos.Y][pos.X].Type != 'E')
         {
             var nextPos = GetNext(map, pos);
             if (nextPos == null)
             {
                 break;
             }
-            map[pos.Y][pos.X] = 'X';
+            map[pos.Y][pos.X].Visited = true;
             fieldSteps[pos.X, pos.Y] = steps;
             pos = nextPos;
             steps++;
         }
+        fieldSteps[pos.X, pos.Y] = steps;
         return fieldSteps;
     }
 
-    private List<Cheat> FindCheats(char[][] map)
+    private HashSet<Cheat> FindCheats(Tile[][] map, long[,] stepsField, int maxCheatDuration, Position startPos, Position endPos, int threshold = 100)
     {
-        long steps = 0;
+        HashSet<Cheat> cheats = new HashSet<Cheat>(1000000, new CheatEqualityComparer());
+        var stepsToEnd = stepsField[endPos.X, endPos.Y] - stepsField[startPos.X, startPos.Y];
 
-        List<Cheat> cheats = [];
-        var pos = FindStartPosition(map);
-
-        while (map[pos.Y][pos.X] != 'E')
+        var pos = startPos;
+        var reachablePositions = GetReachablePositions(maxCheatDuration, pos);
+        while (map[pos.Y][pos.X].Type != 'E')
         {
-            foreach (var direction in new[] { UP, DOWN, LEFT, RIGHT })
+            map[pos.Y][pos.X].Visited = true;
+            var nextPos = GetNext(map, pos);
+            var direction = new Position(nextPos.X - pos.X, nextPos.Y - pos.Y);
+            foreach (var reachablePos in reachablePositions)
             {
-                if (IsCheat(map, pos, direction, out var cheatPos))
+                if (reachablePos.X < 0 || reachablePos.X >= map[0].Length || reachablePos.Y < 0 || reachablePos.Y >= map.Length)
                 {
-                    cheats.Add(new Cheat(steps + 2, cheatPos));
+                    reachablePos.X += direction.X;
+                    reachablePos.Y += direction.Y;
+                    continue;
+                }
+                if (stepsField[reachablePos.X, reachablePos.Y] < stepsField[pos.X, pos.Y])
+                {
+                    reachablePos.X += direction.X;
+                    reachablePos.Y += direction.Y;
+                    continue;
+                }
+                if (map[reachablePos.Y][reachablePos.X].Type == '#')
+                {
+                    reachablePos.X += direction.X;
+                    reachablePos.Y += direction.Y;
+                    continue;
+                }
+                var stepsFromCheatPosToEndPos = stepsField[endPos.X, endPos.Y] - stepsField[reachablePos.X, reachablePos.Y];
+                var stepsFromStartPosToCheatPos = stepsField[pos.X, pos.Y] + Math.Abs(reachablePos.X - pos.X) + Math.Abs(reachablePos.Y - pos.Y);
+                if (stepsToEnd - (stepsFromStartPosToCheatPos + stepsFromCheatPosToEndPos) >= threshold)
+                {
+                    var cheatPos = reachablePos with { };
+                    var cheat = new Cheat(stepsFromStartPosToCheatPos, pos, reachablePos);
+                    cheats.Add(cheat);
+                }
+                reachablePos.X += direction.X;
+                reachablePos.Y += direction.Y;
+            }
+            pos = nextPos;
+        }
+
+        return cheats.Distinct(new CheatEqualityComparer()).ToHashSet();
+    }
+
+    private HashSet<Position> GetReachablePositions(int maxCheatDuration, Position pos) // Sliding window
+    {
+        HashSet<Position> reachablePositions = [];
+
+        foreach (var yDirection in new[] { UP, DOWN })
+        {
+            foreach (var xDirection in new[] { LEFT, RIGHT })
+            {
+                for (int y = 0; y <= maxCheatDuration; y++)
+                {
+                    for (int x = 0; x <= maxCheatDuration - y; x++)
+                    {
+                        var nextPos = new Position(pos.X + xDirection.X * x, pos.Y + yDirection.Y * y);
+                        reachablePositions.Add(nextPos);
+                    }
                 }
             }
-            var nextPos = GetNext(map, pos);
-            if (nextPos == null)
-            {
-                break;
-            }
-            map[pos.Y][pos.X] = 'X';
-            pos = nextPos;
-            steps++;
         }
-       
-        return cheats;
+
+        return reachablePositions;
     }
 
-    private Position FindStartPosition(char[][] map)
+    private Position FindStartPosition(Tile[][] map)
     {
         return map
-            .Select((row, y) => (row, pos: new Position(Array.IndexOf(row, 'S'), y)))
-            .Where(t => t.pos.X >= 0)
-            .Select(t => t.pos)
-            .First();
+            .First(y => y.Any(x => x.Type == 'S'))
+            .First(x => x.Type == 'S').Position;
     }
 
-    private Position GetNext(char[][] map, Position currentPos)
+    private Position FindEndPosition(Tile[][] map)
+    {
+        return map
+            .First(y => y.Any(x => x.Type == 'E'))
+            .First(x => x.Type == 'E').Position;
+    }
+
+    private Position GetNext(Tile[][] map, Position currentPos)
     {
         Position newPosition;
-        foreach (var direction in new[] { UP, DOWN, LEFT, RIGHT })
+        foreach (var direction in DIRECTIONS)
         {
             newPosition = new Position(currentPos.X + direction.X, currentPos.Y + direction.Y);
             if (newPosition.X < 0 || newPosition.X >= map[0].Length || newPosition.Y < 0 || newPosition.Y >= map.Length)
             {
                 continue;
             }
-            if (map[newPosition.Y][newPosition.X] != '.' && map[newPosition.Y][newPosition.X] != 'E')
+            if (map[newPosition.Y][newPosition.X].Visited || map[newPosition.Y][newPosition.X].Type == '#')
             {
                 continue;
             }
@@ -121,31 +184,38 @@ internal class Day20 : BaseDay<long>
         return null;
     }
 
-    private bool IsCheat(char[][] map, Position pos, Position direction, out Position cheatPos)
+    private record Cheat(long Steps, Position Start, Position End);
+
+    private record Position
     {
-        var nextPos = new Position(pos.X + direction.X, pos.Y + direction.Y);
-        cheatPos = new Position(pos.X + direction.X * 2, pos.Y + direction.Y * 2);
-        if (nextPos.X < 0 || cheatPos.X < 0 || nextPos.X >= map[0].Length || cheatPos.X >= map[0].Length || 
-            nextPos.Y < 0 || cheatPos.Y < 0 || nextPos.Y >= map.Length || cheatPos.Y >= map.Length)
+        public int X { get; set; }
+        public int Y { get; set; }
+        public Position(int x, int y)
         {
-            cheatPos = null;
-            return false;
+            X = x;
+            Y = y;
         }
-        if (map[nextPos.Y][nextPos.X] == '#' && (map[cheatPos.Y][cheatPos.X] == '.' || map[cheatPos.Y][cheatPos.X] == 'E'))
-        {
-            return true;
-        }
-        cheatPos = null;
-        return false;
     }
-
-    private record Cheat(long Steps, Position Position);
-
-    private record Position(int X, int Y);
+    private record Tile(char Type, Position Position)
+    {
+        public bool Visited { get; set; }
+    }
 
     private static readonly Position UP = new(0, -1);
     private static readonly Position DOWN = new(0, 1);
     private static readonly Position LEFT = new(-1, 0);
     private static readonly Position RIGHT = new(1, 0);
+    private static readonly Position[] DIRECTIONS = [UP, DOWN, LEFT, RIGHT];
 
+    private class CheatEqualityComparer : IEqualityComparer<Cheat>
+    {
+        public bool Equals(Cheat a, Cheat b)
+        {
+            return a.Start.X == b.Start.X && a.Start.Y == b.Start.Y && a.End.X == b.End.X && a.End.Y == b.End.Y;
+        }
+        public int GetHashCode([DisallowNull] Cheat obj)
+        {
+            return obj.Start.GetHashCode() ^ obj.End.GetHashCode();
+        }
+    }
 }
