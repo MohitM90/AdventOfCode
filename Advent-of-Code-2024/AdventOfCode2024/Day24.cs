@@ -10,10 +10,10 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace AdventOfCode2024;
-internal class Day24 : BaseDay<long>
+internal class Day24 : BaseDay<string>
 {
 
-    public override long Puzzle1()
+    public override string Puzzle1()
     {
         long answer = 0;
         var input = Input.Split("\r\n\r\n");
@@ -46,16 +46,73 @@ internal class Day24 : BaseDay<long>
             }
         }
         
-        return answer;
+        return $"{answer}";
     }
 
-    public override long Puzzle2()
+    public override string Puzzle2()
     {
-        long answer = 0;
-        var input = Input.Split("\r\n");
+        var input = Input.Split("\r\n\r\n");
+        var variables = input[0].Split("\r\n")
+            .Select(x => x.Split(": "))
+            .ToDictionary(x => x[0], x => x[1] == "1");
+        var operations = input[1].Split("\r\n")
+            .Order()
+            .Select(x => x.Split(" "))
+            .Select(x => new Operation(x[0], x[2], GetGate(x[1]), x[4]))
+            .OrderByDescending(x => x.Operand1.StartsWith('x') || x.Operand1.StartsWith('y') || x.Operand2.StartsWith('x') || x.Operand2.StartsWith('y'))
+            .ThenBy(x => x.Operand1[1..])
+            .ThenBy(x => x.Operand2[1..])
+            .ThenByDescending(x => x.Gate)
+            .ToArray();
 
+        //var queue = new Queue<Operation>(operations);
 
-        return answer;
+        List<string> errors = new();
+        var ci = operations.First(o => ((o.Operand1 == "x00" && o.Operand2 == "y00") || (o.Operand1 == "y00" && o.Operand2 == "x00")) && o.Gate == Gate.AND).Result;
+        for (int i = 1; i < 45; i++)
+        {
+            var x = "x" + i.ToString("D2");
+            var y = "y" + i.ToString("D2");
+
+            var st = operations.First(o => ((o.Operand1 == x && o.Operand2 == y) || (o.Operand1 == y && o.Operand2 == x)) && o.Gate == Gate.XOR).Result;
+            var ct = operations.First(o => ((o.Operand1 == x && o.Operand2 == y) || (o.Operand1 == y && o.Operand2 == x)) && o.Gate == Gate.AND).Result;
+
+            var si = operations.FirstOrDefault(o => ((o.Operand1 == ci && o.Operand2 == st) || (o.Operand1 == st && o.Operand2 == ci)) && o.Gate == Gate.XOR)?.Result;
+            if (si == null)
+            {
+                var si2 = si = operations.FirstOrDefault(o => ((o.Operand1 == ci && o.Operand2 == ct) || (o.Operand1 == ct && o.Operand2 == ci)) && o.Gate == Gate.XOR)?.Result;
+                if (si2 == null)
+                {
+                    break;
+                }
+                errors.Add(st);
+                errors.Add(ct);
+                si = si2;
+                (st, ct) = (ct, st);
+            }
+            else if (!si.StartsWith('z') && ct.StartsWith('z'))
+            {
+                errors.Add(si);
+                errors.Add(ct);
+                ct = si;
+            }
+            var cti = operations.First(o => ((o.Operand1 == ci && o.Operand2 == st) || (o.Operand1 == st && o.Operand2 == ci)) && o.Gate == Gate.AND).Result;
+            if (!si.StartsWith('z') && cti.StartsWith('z'))
+            {
+                errors.Add(si);
+                errors.Add(cti);
+                cti = si;
+            }
+            ci = operations.First(o => ((o.Operand1 == cti && o.Operand2 == ct) || (o.Operand1 == ct && o.Operand2 == cti)) && o.Gate == Gate.OR).Result;
+            if (!si.StartsWith('z') && ci.StartsWith('z'))
+            {
+                errors.Add(si);
+                errors.Add(ci);
+                ci = si;
+            }
+        }
+
+        return string.Join(",", errors.Order());
     }
 
     private bool ApplyOperation(Dictionary<string, bool> variables, Operation operation)
