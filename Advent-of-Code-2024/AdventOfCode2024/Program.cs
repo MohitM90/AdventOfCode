@@ -2,5 +2,5 @@
 Console.OutputEncoding = System.Text.Encoding.Unicode;
 
 
-new Day21().Run();
+new Day22().Run();
 Console.ReadKey();
