@@ -21,32 +21,14 @@ internal class Day21 : BaseDay<long>
 
         foreach (var sequence in input)
         {
-            Console.WriteLine("Sequence: " + sequence);
             var startPosition = 'A';
             var numPadSequences = GetControlSequences(NumPadPaths, sequence, startPosition);
 
             HashSet<string> dirPadSequences = numPadSequences;
-            HashSet<string> resultSequences = [];
-            for (int i = 0; i < 2; i++)
-            {
-                var length = int.MaxValue;
-                var iterations = dirPadSequences.Count;
 
-                foreach (var dirPadSequence in dirPadSequences)
-                {
-                    var tempDirPadSequences = GetControlSequences(DirPadPaths, dirPadSequence, startPosition);
-                    if (tempDirPadSequences.Any(x => x.Length < length))
-                    {
-                        length = tempDirPadSequences.Min(x => x.Length);
-                        resultSequences = tempDirPadSequences;
-                    }
-                    Console.WriteLine("Remaining : " + --iterations);
-                }
-                dirPadSequences = resultSequences;
-            }
+            var minLength = dirPadSequences.Min(x => Solve(DirPadPaths, x, 2, []));
+            answer += minLength * long.Parse(sequence.Replace("A", ""));
 
-            var minSequence = resultSequences.Min(x => x.Length);
-            answer += minSequence * long.Parse(sequence.Replace("A", ""));
         }
 
         return answer;
@@ -57,59 +39,62 @@ internal class Day21 : BaseDay<long>
         long answer = 0;
         var input = Input.Split("\r\n");
 
+
+        foreach (var sequence in input)
+        {
+            var startPosition = 'A';
+            var numPadSequences = GetControlSequences(NumPadPaths, sequence, startPosition);
+
+            HashSet<string> dirPadSequences = numPadSequences;
+
+            var minLength = dirPadSequences.Min(x => Solve(DirPadPaths, x, 25, []));
+            answer += minLength * long.Parse(sequence.Replace("A", ""));
+
+        }
+
         return answer;
     }
 
-    private HashSet<string> GetControlSequences(Dictionary<char, Dictionary<char, Dictionary<char, Key>>> paths, string sequence, char start)
+    private long Solve(Dictionary<char, Dictionary<char, HashSet<string>>> paths, string sequence, int depth, Dictionary<(int Depth, string Sequence), long> cache)
+    {
+        if (depth == 0)
+        {
+            return sequence.Length;
+        }
+        if (cache.TryGetValue((depth, sequence), out var tempValue))
+        {
+            return tempValue;
+        }
+        var startPosition = 'A';
+        var subSequences = sequence.Split('A').SkipLast(1).ToArray();
+        var length = 0L;
+        foreach (var subSequence in subSequences)
+        {
+            var cSequences = GetControlSequences(paths, subSequence + 'A', startPosition);
+            length += cSequences.Min(x => Solve(paths, x, depth - 1, cache));
+        }
+        cache.Add((depth, sequence), length);
+        return length;
+    }
+
+    private HashSet<string> GetControlSequences(Dictionary<char, Dictionary<char, HashSet<string>>> paths, string sequence, char start)
     {
         var currentPosition = start;
         HashSet<string> results = [""];
 
         foreach (var c in sequence)
         {
-            Queue<string> queue = new Queue<string>(results);
-            results.Clear();
-            while (queue.Count > 0)
-            {
-                var tempSequence = queue.Dequeue();
-                var cSequences = GetControlSequences(paths, tempSequence, c, currentPosition);
-                foreach (var cSequence in cSequences)
-                {
-                    results.Add(cSequence);
-                }
-            }
+            var cSequences = GetControlSequences(paths, c, currentPosition);
+            results = results.SelectMany(x => cSequences.Select(y => x + y)).ToHashSet();
             currentPosition = c;
         }
 
         return results;
     }
 
-    private HashSet<string> GetControlSequences(Dictionary<char, Dictionary<char, Dictionary<char, Key>>> paths, string sequence, char target, char currentPosition)
+    private HashSet<string> GetControlSequences(Dictionary<char, Dictionary<char, HashSet<string>>> paths, char target, char currentPosition)
     {
-        HashSet<string> results = [];
-        var directions = paths[currentPosition]
-            .GroupBy(x => x.Value[target].Distance)
-            .MinBy(x => x.Key);
-
-        if (directions == null || !directions.Any())
-        {
-            return results;
-        }
-
-        foreach (var direction in directions)
-        {
-            var tempSequence = "";
-            var position = direction.Value[target];
-            while (position.Parent != null)
-            {
-                tempSequence = position.ParentDirection.Value + tempSequence;
-                position = position.Parent;
-            }
-            tempSequence += 'A';
-            results.Add(sequence + tempSequence);
-        }
-
-        return results;
+        return paths[currentPosition][target];
     }
 
 
@@ -127,12 +112,12 @@ internal class Day21 : BaseDay<long>
         { '<', 'v', '>' }
     };
 
-    private Dictionary<char, Dictionary<char, Dictionary<char, Key>>> NumPadPaths = GetAllPaths(NumPad);
-    private Dictionary<char, Dictionary<char, Dictionary<char, Key>>> DirPadPaths = GetAllPaths(DirPad);
+    private Dictionary<char, Dictionary<char, HashSet<string>>> NumPadPaths = GetAllPaths(NumPad);
+    private Dictionary<char, Dictionary<char, HashSet<string>>> DirPadPaths = GetAllPaths(DirPad);
 
-    private static Dictionary<char, Dictionary<char, Dictionary<char, Key>>> GetAllPaths(char[,] pad)
+    private static Dictionary<char, Dictionary<char, HashSet<string>>> GetAllPaths(char[,] pad)
     {
-        Dictionary<char, Dictionary<char, Dictionary<char, Key>>> paths = [];
+        Dictionary<char, Dictionary<char, HashSet<string>>> paths = [];
         for (int y = 0; y < pad.GetLength(0); y++)
         {
             for (int x = 0; x < pad.GetLength(1); x++)
@@ -144,24 +129,39 @@ internal class Day21 : BaseDay<long>
                 foreach (var direction in new[] { LEFT, DOWN, RIGHT, UP })
                 {
                     var start = new Key(pad[y, x], new Position(x, y), 0, null, direction);
-                    var keys = GetShortestPaths(pad, start);
+                    var shortest = GetShortestPaths(pad, start).ToDictionary(x => x.Key, x => ToPath(x.Value));
                     if (!paths.TryGetValue(start.Value, out var tempValue))
                     {
                         paths.Add(start.Value, []);
                     }
-                    if (!paths[start.Value].TryGetValue(direction.Value, out var tempValue2))
+                    foreach (KeyValuePair<char, string> path in shortest)
                     {
-                        paths[start.Value].Add(direction.Value, keys);
-                    }
-                    else
-                    {
-                        paths[start.Value][direction.Value] = keys;
+                        if (!paths[start.Value].TryGetValue(path.Key, out var tempValue2))
+                        {
+                            paths[start.Value].Add(path.Key, [path.Value]);
+                        }
+                        else
+                        {
+                            paths[start.Value][path.Key].Add(path.Value);
+                        }
                     }
                 }
                 
             }
         }
         return paths;
+    }
+
+    private static string ToPath(Key key)
+    {
+        var path = "";
+        while (key.Parent != null)
+        {
+            path = key.ParentDirection.Value + path;
+            key = key.Parent;
+        }
+        path += 'A';
+        return path;
     }
 
     private static Dictionary<char, Key> GetShortestPaths(char[,] map, Key start)
