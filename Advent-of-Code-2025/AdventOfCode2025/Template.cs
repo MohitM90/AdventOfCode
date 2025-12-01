@@ -2,20 +2,20 @@
 
 internal class Template : BaseDay<long>
 {
-    public override long Puzzle1()
+    public override async Task<long> Puzzle1(string input)
     {
         long answer = 0;
-        var inputs = Input.Split("\r\n");
+        var inputs = input.Split("\r\n");
 
 
 
         return answer;
     }
 
-    public override long Puzzle2()
+    public override async Task<long> Puzzle2(string input)
     {
         long answer = 0;
-        var inputs = Input.Split("\r\n");
+        var inputs = input.Split("\r\n");
 
 
 
