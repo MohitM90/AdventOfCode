@@ -7,8 +7,8 @@ internal abstract class BaseDay<T>
     private string Input { get; set; } = File.ReadAllText("input.txt");
     private string ExampleInput { get; set; } = File.ReadAllText("example.txt");
 
-    public virtual async Task<T> Puzzle1(string input) { throw new NotImplementedException(); }
-    public virtual async Task<T> Puzzle2(string input) { throw new NotImplementedException(); }
+    public abstract Task<T> Puzzle1(string input);
+    public abstract Task<T> Puzzle2(string input);
 
     public async Task RunAsync()
     {
