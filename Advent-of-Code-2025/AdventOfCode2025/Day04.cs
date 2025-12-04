@@ -10,7 +10,7 @@ internal class Day04 : BaseDay<long>
     {
         long answer = 0;
         var map = input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
-        answer = RemovePaperRolls(map);
+        answer = RemovePaperRolls(map, false);
 
 
         return answer;
@@ -19,14 +19,19 @@ internal class Day04 : BaseDay<long>
     public override async Task<long> Puzzle2(string input)
     {
         long answer = 0;
-        var inputs = input.Split("\r\n");
-
+        var map = input.Split("\r\n").Select(s => s.ToCharArray()).ToArray();
+        var count = 0;
+        do
+        {
+            count = RemovePaperRolls(map, true);
+            answer += count;
+        } while (count > 0);
 
 
         return answer;
     }
 
-    private int RemovePaperRolls(char[][] map)
+    private int RemovePaperRolls(char[][] map, bool replaceChar)
     {
         int removedCount = 0;
         for (int x = 0; x < map.Length; x++)
@@ -38,6 +43,11 @@ internal class Day04 : BaseDay<long>
                     var count = GetAdjacentCount(map, x, y);
                     if (count < 4)
                     {
+                        if (replaceChar)
+                        {
+                            map[x][y] = 'x';
+                        }
+                        
                         removedCount++;
                     }
                 }
