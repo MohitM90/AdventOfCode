@@ -28,4 +28,50 @@ internal static class Extensions
 
         return builder.ToString();
     }
+
+    public static T[,] To2DArray<T>(this T[][] values)
+    {
+        int rows = values.Length;
+        int cols = values[0].Length;
+        T[,] result = new T[rows, cols];
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                result[i, j] = values[i][j];
+            }
+        }
+        return result;
+    }
+
+    public static T[][] Transpose<T>(this T[][] array)
+    {
+        int rows = array.Length;
+        int cols = array[0].Length;
+        T[][] transposed = new T[cols][];
+        for (int i = 0; i < cols; i++)
+        {
+            transposed[i] = new T[rows];
+            for (int j = 0; j < rows; j++)
+            {
+                transposed[i][j] = array[j][i];
+            }
+        }
+        return transposed;
+    }
+
+    public static T[,] Transpose<T>(this T[,] array)
+    {
+        int rows = array.GetLength(0);
+        int cols = array.GetLength(1);
+        T[,] result = new T[cols, rows];
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                result[j, i] = array[i, j];
+            }
+        }
+        return result;
+    }
 }
