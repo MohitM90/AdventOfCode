@@ -29,6 +29,28 @@ internal static class Extensions
         return builder.ToString();
     }
 
+    public static IEnumerable<int> AllIndexesOf(this string str, string searchstring)
+    {
+        int minIndex = str.IndexOf(searchstring);
+        while (minIndex != -1)
+        {
+            yield return minIndex;
+            minIndex = str.IndexOf(searchstring, minIndex + searchstring.Length);
+        }
+    }
+
+    public static IEnumerable<int> AllIndexesOf(this string str, char searchchar)
+    {
+        return str.AllIndexesOf(searchchar.ToString());
+    }
+
+    public static string ReplaceAt(this string str, int index, char newChar)
+    {
+        var sb = new StringBuilder(str);
+        sb[index] = newChar;
+        return sb.ToString();
+    }
+
     public static T[,] To2DArray<T>(this T[][] values)
     {
         int rows = values.Length;
