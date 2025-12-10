@@ -96,4 +96,44 @@ internal static class Extensions
         }
         return result;
     }
+
+    public static long[] Add(this long[] array, long bitsToIncrease)
+    {
+        long[] result = new long[array.Length];
+        Array.Copy(array, result, array.Length);
+        for (int i = 0; i < array.Length; i++)
+        {
+            if ((bitsToIncrease >> i) % 2 == 1)
+            {
+                result[i]++;
+            }
+        }
+        return result;
+    }
+
+    public static short[] Add(this short[] array, short bitsToIncrease)
+    {
+        short[] result = new short[array.Length];
+        Array.Copy(array, result, array.Length);
+        for (int i = 0; i < array.Length; i++)
+        {
+            if ((bitsToIncrease >> i) % 2 == 1)
+            {
+                result[i]++;
+            }
+        }
+        return result;
+    }
+
+    public static bool AnyGreaterThan(this short[] array1, short[] array2)
+    {
+        for (int i = 0; i < array1.Length; i++)
+        {
+            if (array1[i] > array2[i])
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }

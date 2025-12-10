@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Threading.Tasks.Dataflow;
 
 namespace AdventOfCode2025;
 
@@ -35,84 +37,30 @@ internal class Day09 : BaseDay<long>
         long answer = 0;
         var inputs = data.Split("\r\n");
         var redTiles = inputs.Select(x => x.Split(',')).Select(x => new Tile(int.Parse(x[0]), int.Parse(x[1]))).ToList();
-        var minX = redTiles.Min(x => x.X);
-        var maxX = redTiles.Max(x => x.X) - minX;
-        var minY = redTiles.Min(x => x.Y);
-        var maxY = redTiles.Max(x => x.Y) - minY;
-        char[,] grid = new char[maxX + 1, maxY + 1];
-        for (long y = 0; y <= maxY; y++)
-        {
-            for (long x = 0; x <= maxX; x++)
-            {
-                grid[x, y] = '.';
-            }
-        }
-        var sortedByX = redTiles.OrderBy(x => x.X).ToList();
-        for (int i = 0; i < sortedByX.Count; i++)
-        {
-            for (int j = i; j < sortedByX.Count; j++)
-            {
-                var tile1 = sortedByX[i];
-                var tile2 = sortedByX[j];
-                grid[tile1.X - minX, tile1.Y - minY] = '#';
-                grid[tile2.X - minX, tile2.Y - minY] = '#';
-                if (tile1.Y != tile2.Y)
-                {
-                    continue;
-                }
-                for (long x = tile1.X + 1; x < tile2.X; x++)
-                {
-                    grid[x - minX, tile1.Y - minY] = 'X';
-                }
-            }
-        }
-        var sortedByY = redTiles.OrderBy(x => x.Y).ToList();
-        for (int i = 0; i < sortedByY.Count; i++)
-        {
-            for (int j = i; j < sortedByY.Count; j++)
-            {
-                var tile1 = sortedByY[i];
-                var tile2 = sortedByY[j];
-                grid[tile1.X - minX, tile1.Y - minY] = '#';
-                grid[tile2.X - minX, tile2.Y - minY] = '#';
-                if (tile1.X != tile2.X)
-                {
-                    continue;
-                }
-                for (long y = tile1.Y + 1; y < tile2.Y; y++)
-                {
-                    grid[tile1.X - minX, y - minY] = '#';
-                }
-            }
-        }
-
-        for (long y = 0; y <= maxY; y++)
-        {
-            for (long x = 0; x <= maxX; x++)
-            {
-                Console.Write(grid[x, y]);
-            }
-            Console.WriteLine();
-        }
+        var orderedGridY = redTiles.ToLookup(t => t.Y).ToDictionary(k => k.Key, v => v.ToHashSet());
+        var orderedGridX = redTiles.ToLookup(t => t.X).ToDictionary(k => k.Key, v => v.ToHashSet());
 
         for (int i = 0; i < redTiles.Count; i++)
         {
-            for (int j = i + 1; j < redTiles.Count; j++)
+            for (int j = 0; j < redTiles.Count; j++)
             {
-                char previous = '.';
-                var inside = false;
-                var corner1 = new Tile(redTiles[i].X - minX, redTiles[i].Y - minY);
-                var corner2 = new Tile(redTiles[j].X - minX, redTiles[j].Y - minY);
+                var corner1 = redTiles[i];
+                var corner2 = redTiles[j];
                 var corner3 = new Tile(corner1.X, corner2.Y);
                 var corner4 = new Tile(corner2.X, corner1.Y);
-                if (IsInsideArea(grid, corner1) && IsInsideArea(grid, corner2) && IsInsideArea(grid, corner3) && IsInsideArea(grid, corner4))
+
+                if (IsInside(orderedGridY[corner1.Y], orderedGridX[corner1.X], corner1, corner3, corner4) &&
+                    IsInside(orderedGridY[corner2.Y], orderedGridX[corner2.X], corner2, corner4, corner3) &&
+                    IsInside(orderedGridY[corner3.Y], orderedGridX[corner3.X], corner3, corner1, corner4) &&
+                    IsInside(orderedGridY[corner4.Y], orderedGridX[corner4.X], corner4, corner2, corner3))
                 {
-                    var area = (Math.Abs(redTiles[i].X - redTiles[j].X) + 1) * (Math.Abs(redTiles[i].Y - redTiles[j].Y) + 1);
+                    var area = (Math.Abs(corner1.X - corner2.X) + 1) * (Math.Abs(corner1.Y - corner2.Y) + 1);
                     if (area >= answer)
                     {
                         answer = area;
                     }
                 }
+
             }
         }
 
@@ -122,21 +70,16 @@ internal class Day09 : BaseDay<long>
         return answer;
     }
 
-    private bool IsInsideArea(char[,] grid, Tile tile)
+    private bool IsInside(HashSet<Tile> gridY, HashSet<Tile> gridX, Tile tile, Tile tile2, Tile tile3)
     {
-        char previous = '.';
-        var inside = false;
-        for (int x = 0; x <= tile.X; x++)
-        {
-            var current = grid[x, tile.Y];
-            if (current == '#' && previous == '.')
-            {
-                inside = !inside;
-            }
-            previous = current;
-        }
-        return inside;
+        //if (grid.Count == 4) 
+        //{
+        //    return (grid.Count(t => t.X > tile.X) >= 2 && grid.Count(t => t.X > tile2.X) >= 2) ||
+        //        (grid.Count(t => t.X < tile.X) >= 2 && grid.Count(t => t.X < tile2.X) >= 2);
+        //}
+        return gridY.Count(t => t.X > tile.X) < 2 && gridX.Count(t => t.Y > tile.Y) < 2;
     }
+
 
     public record Tile(long X, long Y);
 }
