@@ -42,25 +42,25 @@ internal class Day09 : BaseDay<long>
 
         for (int i = 0; i < redTiles.Count; i++)
         {
-            for (int j = 0; j < redTiles.Count; j++)
+            for (int j = i + 1; j < redTiles.Count; j++)
             {
                 var corner1 = redTiles[i];
                 var corner2 = redTiles[j];
                 var corner3 = new Tile(corner1.X, corner2.Y);
                 var corner4 = new Tile(corner2.X, corner1.Y);
 
-                if (IsInside(orderedGridY[corner1.Y], orderedGridX[corner1.X], corner1, corner3, corner4) &&
-                    IsInside(orderedGridY[corner2.Y], orderedGridX[corner2.X], corner2, corner4, corner3) &&
-                    IsInside(orderedGridY[corner3.Y], orderedGridX[corner3.X], corner3, corner1, corner4) &&
-                    IsInside(orderedGridY[corner4.Y], orderedGridX[corner4.X], corner4, corner2, corner3))
+                if (IsInside(redTiles, corner1) && IsInside(redTiles, corner2) &&
+                    IsInside(redTiles, corner3) && IsInside(redTiles, corner4))
                 {
-                    var area = (Math.Abs(corner1.X - corner2.X) + 1) * (Math.Abs(corner1.Y - corner2.Y) + 1);
-                    if (area >= answer)
+                    if (!IntersectsPolygon(redTiles, corner1, corner2, corner3, corner4))
                     {
-                        answer = area;
+                        var area = (Math.Abs(corner1.X - corner2.X) + 1) * (Math.Abs(corner1.Y - corner2.Y) + 1);
+                        if (area >= answer)
+                        {
+                            answer = area;
+                        }
                     }
                 }
-
             }
         }
 
@@ -70,14 +70,83 @@ internal class Day09 : BaseDay<long>
         return answer;
     }
 
-    private bool IsInside(HashSet<Tile> gridY, HashSet<Tile> gridX, Tile tile, Tile tile2, Tile tile3)
+    private bool IsInside(List<Tile> tiles, Tile point)
     {
-        //if (grid.Count == 4) 
-        //{
-        //    return (grid.Count(t => t.X > tile.X) >= 2 && grid.Count(t => t.X > tile2.X) >= 2) ||
-        //        (grid.Count(t => t.X < tile.X) >= 2 && grid.Count(t => t.X < tile2.X) >= 2);
-        //}
-        return gridY.Count(t => t.X > tile.X) < 2 && gridX.Count(t => t.Y > tile.Y) < 2;
+        bool isInside = false;
+        for (int i = 0; i < tiles.Count - 1; i++)
+        {
+            var tileA = tiles[i];
+            var tileB = tiles[(i + 1) % tiles.Count];
+
+            var minX = Math.Min(tileA.X, tileB.X);
+            var maxX = Math.Max(tileA.X, tileB.X);
+            var minY = Math.Min(tileA.Y, tileB.Y);
+            var maxY = Math.Max(tileA.Y, tileB.Y);
+
+            if (tileA.Y == tileB.Y && tileA.Y == point.Y 
+                && point.X >= minX && point.X <= maxX)
+            {
+                return true;
+            }
+
+            if (tileA.X == tileB.X && tileA.X == point.X
+                && point.Y >= minY && point.Y <= maxY)
+            {
+                return true;
+            }
+
+            if ((tileA.Y < point.Y && tileB.Y >= point.Y) || (tileB.Y < point.Y && tileA.Y >= point.Y))
+            {
+                if (tileA.Y == tileB.Y)
+                {
+                    continue;
+                }
+
+                var intersectX = tileA.X + (point.Y - tileA.Y) * (tileB.X - tileA.X) / (tileB.Y - tileA.Y);
+
+                if (intersectX > point.X)
+                {
+                    isInside = !isInside;
+                }
+            }
+        }
+        return isInside;
+    }
+
+    private bool IntersectsPolygon(List<Tile> tiles, Tile corner1, Tile corner2, Tile corner3, Tile corner4)
+    {
+        for (int i = 0; i < tiles.Count; i++)
+        {
+            var tileA = tiles[i];
+            var tileB = tiles[(i + 1) % tiles.Count];
+            
+            var yMin = Math.Min(corner1.Y, corner2.Y);
+            var yMax = Math.Max(corner1.Y, corner2.Y);
+            var xMin = Math.Min(corner1.X, corner2.X);
+            var xMax = Math.Max(corner1.X, corner2.X);
+
+            if (tileA.Y == tileB.Y)
+            {
+                var maxX = Math.Max(tileA.X, tileB.X);
+                var minX = Math.Min(tileA.X, tileB.X);
+
+                if (tileA.Y > yMin && tileA.Y < yMax && maxX > xMin && minX < xMax)
+                {
+                    return true; 
+                }
+            }
+            else if (tileA.X == tileB.X)
+            {
+                var maxY = Math.Max(tileA.Y, tileB.Y);
+                var minY = Math.Min(tileA.Y, tileB.Y);
+                if (tileA.X > xMin && tileA.X < xMax && maxY > yMin && minY < yMax)
+                {
+                    return true; 
+                }
+            }
+
+        }
+        return false;
     }
 
 

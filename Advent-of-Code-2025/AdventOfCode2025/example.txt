@@ -1,10 +1,8 @@
-aaa: you hhh
-you: bbb ccc
-bbb: ddd eee
-ccc: ddd eee fff
-ddd: ggg
-eee: out
-fff: out
-ggg: out
-hhh: ccc fff iii
-iii: out
+7,1
+11,1
+11,7
+9,7
+9,5
+2,5
+2,3
+7,3
