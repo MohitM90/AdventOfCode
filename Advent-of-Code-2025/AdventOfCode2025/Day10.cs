@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Google.OrTools.LinearSolver;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -62,42 +63,56 @@ internal class Day10 : BaseDay<long>
         {
             var machine = input.Split(' ');
 
-            short[] target = machine[machine.Length - 1].Replace("{", "").Replace("}", "").Split(',')
-                .Select(x => short.Parse(x)).ToArray();
-            short[] buttonSets = machine[1..(machine.Length - 1)].Select(b => b.Replace("(", "").Replace(")", "").Split(','))
-                .Select(x => (short)x.Select(b => (int)Math.Pow(2, int.Parse(b))).Sum()).ToArray();
+            int[] target = machine[machine.Length - 1]
+                .Replace("{", "")
+                .Replace("}", "")
+                .Split(',')
+                .Select(x => int.Parse(x))
+                .ToArray();
 
-            short[] initial = new short[target.Length];
+            List<int[]> buttonSets = machine[1..(machine.Length - 1)]
+                .Select(b => b.Replace("(", "").Replace(")", "").Split(','))
+                .Select(x => x.Select(b => int.Parse(b)).ToArray()).ToList();
 
-            Queue<short[]> queue = new Queue<short[]>();
-            var comparer = new LongArrayComparer();
-            Dictionary<short[], int> visited = new Dictionary<short[], int>(comparer);
-            visited.Add(initial, 0);
-            queue.Enqueue(initial);
-            while (queue.Count > 0)
+            Solver solver = Solver.CreateSolver("SCIP");
+            if (solver is null)
             {
-                int level = visited[queue.Peek()];
-                var current = queue.Dequeue();
-                foreach (var buttonSet in buttonSets)
+                return -1;
+            }
+
+            var variables = buttonSets
+                .Select((x, i) => solver.MakeIntVar(0.0, double.PositiveInfinity, $"x{i}"))
+                .ToList();
+
+            for (int i = 0; i < target.Length; i++)
+            {
+                var constraint = solver.MakeConstraint(target[i], target[i]);
+                for (int n = 0; n < buttonSets.Count; n++)
                 {
-                    var next = current.Add(buttonSet);
-                    if (next.AnyGreaterThan(target))
+                    if (buttonSets[n].Contains(i))
                     {
-                        continue;
+                        constraint.SetCoefficient(variables[n], 1.0);
                     }
-                    if (!visited.ContainsKey(next))
+                    else
                     {
-                        visited.Add(next, level + 1);
-                        queue.Enqueue(next);
-                        if (comparer.Equals(next, target))
-                        {
-                            answer += level + 1;
-                            queue.Clear();
-                            break;
-                        }
+                        constraint.SetCoefficient(variables[n], 0.0);
                     }
                 }
+                
             }
+
+            var objective = solver.Objective();
+            objective.SetMinimization();
+            foreach (var variable in variables)
+            {
+                objective.SetCoefficient(variable, 1.0);
+            }
+
+
+            solver.Solve();
+
+            answer += (long)solver.Objective().Value();
+            
         }
 
 
